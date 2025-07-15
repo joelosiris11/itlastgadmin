@@ -38,10 +38,22 @@ let corsInstructionsShown = false;
 // ===================================================================
 async function initAuth() {
     try {
-        // Obtener datos del usuario desde URL params o prompt
+        // Obtener datos del usuario desde URL params o sessionStorage
         const urlParams = new URLSearchParams(window.location.search);
-        const employeeId = urlParams.get('user');
-        
+        let employeeId = urlParams.get('user');
+
+        if (!employeeId) {
+            const storedUser = sessionStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    employeeId = user.id;
+                } catch (e) {
+                    console.error('Error leyendo sesión almacenada:', e);
+                }
+            }
+        }
+
         if (!employeeId) {
             throw new Error('No se proporcionó ID de empleado');
         }
@@ -67,7 +79,9 @@ async function initAuth() {
             department: employeeData.department,
             loginTime: new Date().toISOString()
         };
-        
+
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+
         console.log('✅ Usuario autenticado desde Firebase:', currentUser);
         return currentUser;
         
@@ -80,12 +94,25 @@ async function initAuth() {
 // Función para verificar que el usuario siga autenticado
 async function checkAuthStatus() {
     if (!currentUser) {
-        console.error('❌ [AUTH] Usuario no autenticado detectado');
-        showNotification('Sesión perdida. Redirigiendo al login...', 'error');
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 2000);
-        return false;
+        // Intentar restaurar la sesión desde sessionStorage
+        const storedUser = sessionStorage.getItem('currentUser');
+        if (storedUser) {
+            try {
+                currentUser = JSON.parse(storedUser);
+                console.log('🔄 Sesión restaurada desde sessionStorage');
+            } catch (e) {
+                console.error('Error leyendo sesión almacenada:', e);
+            }
+        }
+
+        if (!currentUser) {
+            console.error('❌ [AUTH] Usuario no autenticado detectado');
+            showNotification('Sesión perdida. Redirigiendo al login...', 'error');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            return false;
+        }
     }
     return true;
 }
@@ -95,6 +122,7 @@ setInterval(checkAuthStatus, 30000);
 
 function logout() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        sessionStorage.removeItem('currentUser');
         currentUser = null;
         window.location.href = 'index.html';
     }
@@ -776,7 +804,7 @@ function updateButtonVisibility() {
     }
 }
 
-// logout() ya está implementada arriba sin localStorage
+// logout() ya está implementada arriba y ahora limpia sessionStorage
 
 // Función para inicializar la aplicación
 async function initApp() {
@@ -792,13 +820,26 @@ async function initApp() {
             storageBucket: firebaseConfig.storageBucket
         });
         
-        // Verificar URL parameters
+        // Verificar URL parameters o sesión almacenada
         const urlParams = new URLSearchParams(window.location.search);
-        const employeeId = urlParams.get('user');
+        let employeeId = urlParams.get('user');
         console.log('🔗 [DEBUG] Employee ID desde URL:', employeeId);
-        
+
         if (!employeeId) {
-            console.error('❌ [DEBUG] No se encontró employee ID en URL');
+            const storedUser = sessionStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    employeeId = user.id;
+                    console.log('🔗 [DEBUG] Employee ID desde sessionStorage:', employeeId);
+                } catch (e) {
+                    console.error('Error leyendo sesión almacenada:', e);
+                }
+            }
+        }
+
+        if (!employeeId) {
+            console.error('❌ [DEBUG] No se encontró employee ID');
             showNotification('Error: No se encontró ID de empleado. Redirigiendo al login...', 'error');
             setTimeout(() => {
                 window.location.href = 'index.html';
@@ -806,7 +847,7 @@ async function initApp() {
             return;
         }
         
-        // Autenticación con Firebase (no localStorage)
+        // Autenticación con Firebase (usa sessionStorage)
         try {
             currentUser = await initAuth();
             console.log('✅ Usuario autenticado desde Firebase:', currentUser);
