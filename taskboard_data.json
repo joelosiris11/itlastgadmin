@@ -1,0 +1,91 @@
+{
+  "employees": [
+    { "employee_id": "2767", "name": "ANGELICA COLON", "active": true, "role": "user" },
+    { "employee_id": "2891", "name": "CARMEN RAMIEREZ", "active": true, "role": "user" },
+    { "employee_id": "2493", "name": "DAURY DE LEON", "active": true, "role": "user" },
+    { "employee_id": "1771", "name": "JOEL PEÑA", "active": true, "role": "admin" },
+    { "employee_id": "1638", "name": "JOSE DE LEON", "active": true, "role": "user" },
+    { "employee_id": "2494", "name": "JUNIOR GUILLEN", "active": true, "role": "user" },
+    { "employee_id": "2765", "name": "MARIA GOMEZ", "active": true, "role": "user" },
+    { "employee_id": "0061", "name": "PABEL CRUZ", "active": true, "role": "user" },
+    { "employee_id": "1972", "name": "PENELOPE ABREU", "active": true, "role": "user" },
+    { "employee_id": "0062", "name": "RAFAEL LEOTTO", "active": true, "role": "admin" }
+  ],
+  "tasks": [
+    {
+      "task_id": "T001",
+      "title": "Revisión de Reportes",
+      "description": "Revisar los reportes del mes de junio.",
+      "assigned_to": "2767",
+      "status": "tareas",
+      "priority": "high",
+      "due_date": "2024-07-10",
+      "created_at": "2024-07-01T10:00:00Z",
+      "updated_at": "2024-07-01T10:00:00Z",
+      "comments": [
+        {
+          "comment_id": "C001",
+          "author_id": "0062",
+          "text": "Por favor, priorizar este reporte.",
+          "created_at": "2024-07-01T10:05:00Z"
+        },
+        {
+          "comment_id": "C002",
+          "author_id": "2767",
+          "text": "Entendido, lo haré hoy mismo.",
+          "created_at": "2024-07-01T10:15:00Z"
+        }
+      ],
+      "files": [
+        {
+          "file_id": "F001",
+          "filename": "reporte_junio.pdf",
+          "url": "https://tusitio.com/archivos/reporte_junio.pdf",
+          "uploaded_by": "2767",
+          "uploaded_at": "2024-07-01T10:10:00Z"
+        }
+      ]
+    },
+    {
+      "task_id": "T002",
+      "title": "Actualizar Inventario",
+      "description": "Actualizar el inventario de productos.",
+      "assigned_to": "1771",
+      "status": "proceso",
+      "priority": "medium",
+      "due_date": "2024-07-15",
+      "created_at": "2024-07-02T09:00:00Z",
+      "updated_at": "2024-07-02T12:00:00Z",
+      "comments": [
+        {
+          "comment_id": "C003",
+          "author_id": "1771",
+          "text": "Inventario actualizado hasta el 80%.",
+          "created_at": "2024-07-02T12:00:00Z"
+        }
+      ],
+      "files": []
+    },
+    {
+      "task_id": "T003",
+      "title": "Capacitación de Personal",
+      "description": "Organizar capacitación para nuevos empleados.",
+      "assigned_to": "0062",
+      "status": "asignadas",
+      "priority": "low",
+      "due_date": "2024-07-20",
+      "created_at": "2024-07-03T08:30:00Z",
+      "updated_at": "2024-07-03T09:00:00Z",
+      "comments": [],
+      "files": [
+        {
+          "file_id": "F002",
+          "filename": "agenda_capacitacion.pdf",
+          "url": "https://tusitio.com/archivos/agenda_capacitacion.pdf",
+          "uploaded_by": "0062",
+          "uploaded_at": "2024-07-03T09:00:00Z"
+        }
+      ]
+    }
+  ]
+} 

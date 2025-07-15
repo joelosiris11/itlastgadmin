@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Auto-Configurador Supabase ITLA</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+        .big-button {
+            display: block;
+            width: 100%;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 25px;
+            background: linear-gradient(45deg, #ff6a6a, #ff9a6a);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .big-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+        }
+        .big-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .logs {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .log-success { color: #4caf50; }
+        .log-error { color: #f44336; }
+        .log-info { color: #2196f3; }
+        .log-warning { color: #ff9800; }
+        .final-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .final-success h2 {
+            color: #4caf50;
+            font-size: 2em;
+        }
+        .open-btn {
+            display: inline-block;
+            margin: 15px;
+            padding: 15px 30px;
+            background: #4caf50;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .open-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Auto-Configurador ITLA</h1>
+        
+        <p style="text-align: center; font-size: 1.2em; margin-bottom: 30px;">
+            Configuración automática de tu base de datos Supabase<br>
+            <strong>Proyecto:</strong> kqqucevarmhuhvtiiphs.supabase.co
+        </p>
+
+        <button id="configBtn" class="big-button" onclick="iniciarConfiguracion()">
+            🎯 CONFIGURAR BASE DE DATOS COMPLETA
+        </button>
+
+        <div id="logsContainer" class="logs" style="display: none;"></div>
+
+        <div id="successMessage" class="final-success" style="display: none;">
+            <h2>🎉 ¡Configuración Exitosa!</h2>
+            <p>Tu sistema de ponche está listo con:</p>
+            <ul style="text-align: left; display: inline-block; margin: 20px 0;">
+                <li>✅ 12 empleados de ITLA</li>
+                <li>✅ 29 registros de ponche (27/06/2025)</li>
+                <li>✅ Todas las tablas configuradas</li>
+                <li>✅ Sistema completamente funcional</li>
+            </ul>
+            <a href="ponche.html" class="open-btn">🖥️ ABRIR SISTEMA PONCHE</a>
+            <a href="diagnostico_supabase.html" class="open-btn">🔍 VERIFICAR DIAGNÓSTICOS</a>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://kqqucevarmhuhvtiiphs.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxcXVjZXZhcm1odWh2dGlpcGhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzOTI3MDgsImV4cCI6MjA2Njk2ODcwOH0.gZW4Eyu2hiTJeNcmFff2HOscmCY2CAhDiSvCjBUgx0k';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message, type = 'info') {
+            const container = document.getElementById('logsContainer');
+            container.style.display = 'block';
+            
+            const logLine = document.createElement('div');
+            logLine.className = `log-${type}`;
+            logLine.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(logLine);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function iniciarConfiguracion() {
+            const btn = document.getElementById('configBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Configurando...';
+            
+            try {
+                log('🚀 Iniciando configuración automática...', 'info');
+                
+                // Paso 1: Insertar empleados
+                log('👤 Insertando empleados...', 'info');
+                const empleados = [
+                    { employee_id: '2765', name: 'MARIA GOMEZ', department: 'Administración', position: 'Empleado', active: true },
+                    { employee_id: '2891', name: 'CARMEN RAMIEREZ', department: 'Administración', position: 'Empleado', active: true },
+                    { employee_id: '1771', name: 'JOEL PEÑA', department: 'Tecnología', position: 'Empleado', active: true },
+                    { employee_id: '9090', name: 'ADMINISTRATOR', department: 'Sistemas', position: 'Administrador', active: true },
+                    { employee_id: '61', name: 'PABEL CRUZ', department: 'Administración', position: 'Empleado', active: true },
+                    { employee_id: '62', name: 'RAFAEL LEOTTOS', department: 'Tecnología', position: 'Empleado', active: true },
+                    { employee_id: '63', name: 'ALEJANDRA GONZALEZ', department: 'Administración', position: 'Empleado', active: true },
+                    { employee_id: '2493', name: 'DAURY DE LEON', department: 'Recursos Humanos', position: 'Empleado', active: true },
+                    { employee_id: '2767', name: 'ANGELICA COLON', department: 'Administración', position: 'Empleado', active: true },
+                    { employee_id: '1638', name: 'JOSE DE LEON', department: 'Tecnología', position: 'Empleado', active: true },
+                    { employee_id: '1972', name: 'PENELOPE ABREU', department: 'Recursos Humanos', position: 'Empleado', active: true },
+                    { employee_id: '2494', name: 'JUNIOR GUILLEN', department: 'Administración', position: 'Empleado', active: true }
+                ];
+
+                const { data: empData, error: empError } = await supabase
+                    .from('employees')
+                    .upsert(empleados, { onConflict: 'employee_id' });
+                
+                if (empError) {
+                    if (empError.message.includes('relation "employees" does not exist')) {
+                        log('❌ La tabla "employees" no existe. Debes ejecutar setup_database.sql primero.', 'error');
+                        throw new Error('Tablas no existen. Ejecuta setup_database.sql en el SQL Editor de Supabase.');
+                    }
+                    throw empError;
+                }
+                
+                log(`✅ ${empleados.length} empleados insertados correctamente`, 'success');
+
+                // Paso 2: Insertar registros de ponche
+                log('⏰ Insertando registros de ponche...', 'info');
+                const registrosPonche = [
+                    { employee_id: '2765', punch_datetime: '2025-06-27 07:56:14+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '2891', punch_datetime: '2025-06-27 08:45:03+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '1771', punch_datetime: '2025-06-27 08:50:14+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '9090', punch_datetime: '2025-06-27 09:15:26+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '61', punch_datetime: '2025-06-27 09:20:45+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '2765', punch_datetime: '2025-06-27 12:15:30+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '2891', punch_datetime: '2025-06-27 12:30:15+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '62', punch_datetime: '2025-06-27 10:30:20+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '63', punch_datetime: '2025-06-27 08:15:35+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '2493', punch_datetime: '2025-06-27 07:45:10+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '2767', punch_datetime: '2025-06-27 08:25:40+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '1638', punch_datetime: '2025-06-27 09:05:55+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '1972', punch_datetime: '2025-06-27 08:35:25+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '2494', punch_datetime: '2025-06-27 07:50:45+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 1 },
+                    { employee_id: '2765', punch_datetime: '2025-06-27 13:45:20+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 3 },
+                    { employee_id: '2891', punch_datetime: '2025-06-27 14:00:10+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 3 },
+                    { employee_id: '1771', punch_datetime: '2025-06-27 12:45:30+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '9090', punch_datetime: '2025-06-27 13:20:15+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '61', punch_datetime: '2025-06-27 12:50:40+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '62', punch_datetime: '2025-06-27 14:15:25+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '63', punch_datetime: '2025-06-27 12:20:50+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '2493', punch_datetime: '2025-06-27 12:10:35+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '2767', punch_datetime: '2025-06-27 13:05:20+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '1638', punch_datetime: '2025-06-27 13:30:45+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '1972', punch_datetime: '2025-06-27 12:40:15+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '2494', punch_datetime: '2025-06-27 13:15:30+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 2 },
+                    { employee_id: '2765', punch_datetime: '2025-06-27 17:30:45+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 4 },
+                    { employee_id: '2891', punch_datetime: '2025-06-27 17:45:20+00', punch_type: 'exit', punch_date: '2025-06-27', sequence_number: 4 },
+                    { employee_id: '1771', punch_datetime: '2025-06-27 14:10:35+00', punch_type: 'entry', punch_date: '2025-06-27', sequence_number: 3 }
+                ];
+
+                const { data: punchData, error: punchError } = await supabase
+                    .from('punch_records')
+                    .upsert(registrosPonche);
+                
+                if (punchError) {
+                    if (punchError.message.includes('relation "punch_records" does not exist')) {
+                        log('❌ La tabla "punch_records" no existe. Debes ejecutar setup_database.sql primero.', 'error');
+                        throw new Error('Tablas no existen. Ejecuta setup_database.sql en el SQL Editor de Supabase.');
+                    }
+                    throw punchError;
+                }
+                
+                log(`✅ ${registrosPonche.length} registros de ponche insertados correctamente`, 'success');
+
+                // Configuración completada
+                log('🎉 ¡Configuración completada exitosamente!', 'success');
+                log('Sistema listo para usar con todos los datos cargados.', 'success');
+                
+                btn.innerHTML = '✅ CONFIGURACIÓN COMPLETADA';
+                btn.style.background = '#4caf50';
+                
+                document.getElementById('successMessage').style.display = 'block';
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                log('Solución: Ejecuta setup_database.sql en Supabase SQL Editor primero.', 'warning');
+                
+                btn.innerHTML = '❌ ERROR - Ver logs';
+                btn.style.background = '#f44336';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html> 

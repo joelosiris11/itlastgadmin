@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITLA Santiago - Sistema Administrativo</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 25%, #60a5fa 50%, #93c5fd 75%, #dbeafe 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Fondo animado */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: floating 8s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+            }
+            50% {
+                transform: translateY(-10px) scale(1.01);
+            }
+        }
+
+        /* ========================================
+           ESTILOS DE LOGIN
+        ======================================== */
+        .login-container {
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+            position: relative;
+            z-index: 10;
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 2.5rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: loginCardGlow 6s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes loginCardGlow {
+            0% {
+                opacity: 0.3;
+                transform: rotate(0deg);
+            }
+            100% {
+                opacity: 0.6;
+                transform: rotate(180deg);
+            }
+        }
+
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .login-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #ffffff, #f0f9ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1), inset 0 2px 10px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #16a085, #1abc9c);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .login-button:hover::before {
+            left: 100%;
+        }
+
+        .login-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #138d75, #17a2b8);
+        }
+
+        .login-button:active {
+            transform: translateY(-1px);
+            transition: transform 0.1s ease;
+        }
+
+        .login-button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 10px;
+            padding: 0.8rem;
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            animation: shakeError 0.5s ease-in-out;
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .loading-spinner {
+            display: none;
+            margin: 0 auto;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Usuario logueado info */
+        .user-info {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-weight: 600;
+            z-index: 100;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .logout-button {
+            background: rgba(255, 107, 107, 0.8);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 107, 107, 1);
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           ESTILOS DE LA PÁGINA PRINCIPAL (SIN CAMBIOS)
+        ======================================== */
+        .splash-container {
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+            position: relative;
+            z-index: 10;
+            display: none; /* Inicialmente oculto hasta login */
+        }
+
+        .logo-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
+        .main-logo {
+            width: 200px;
+            height: 200px;
+            border-radius: 30px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3),
+                        0 0 0 8px rgba(255, 255, 255, 0.1),
+                        0 0 0 16px rgba(255, 255, 255, 0.05),
+                        inset 0 4px 0 rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            animation: logoAnimation 3s ease-in-out;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes logoAnimation {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            30% {
+                transform: scale(0.8);
+                opacity: 0.3;
+            }
+            60% {
+                transform: scale(1.05);
+                opacity: 0.7;
+            }
+            80% {
+                transform: scale(0.98);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .logo-container::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: logoGlow 4s ease-in-out infinite alternate;
+            z-index: 1;
+        }
+
+        @keyframes logoGlow {
+            0% {
+                opacity: 0.2;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 0.4;
+                transform: scale(1.1);
+            }
+        }
+
+        .title-main {
+            font-size: 3rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #ffffff, #f0f9ff, #dbeafe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleSlideIn 1.5s ease-out 0.5s both;
+        }
+
+        .title-sub {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1rem;
+            animation: titleSlideIn 1.5s ease-out 0.8s both;
+        }
+
+        .subtitle-text {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 3rem;
+            animation: titleSlideIn 1.5s ease-out 1s both;
+        }
+
+        @keyframes titleSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .navigation-container {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 2s ease-out 1.5s both;
+        }
+
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 200px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-button:hover::before {
+            left: 100%;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .nav-button:active {
+            transform: translateY(-4px);
+            transition: transform 0.1s ease;
+        }
+
+        .nav-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .nav-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 0.25rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+            70% {
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 10px rgba(255, 255, 255, 0);
+            }
+            100% {
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        .nav-button:hover {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                max-width: 350px;
+            }
+
+            .login-card {
+                padding: 2rem;
+            }
+
+            .login-logo {
+                width: 100px;
+                height: 100px;
+            }
+
+            .login-title {
+                font-size: 1.8rem;
+            }
+
+            .user-info {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 1rem auto;
+                max-width: 300px;
+                text-align: center;
+            }
+
+            .logout-button {
+                margin-left: 0;
+                margin-top: 0.5rem;
+                display: block;
+                width: 100%;
+            }
+
+            .main-logo {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .title-main {
+                font-size: 2.2rem;
+            }
+            
+            .title-sub {
+                font-size: 1.2rem;
+            }
+
+            .subtitle-text {
+                font-size: 1rem;
+            }
+            
+            .navigation-container {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .nav-button {
+                width: 250px;
+                height: 100px;
+            }
+
+            .nav-icon {
+                font-size: 2rem;
+            }
+
+            .nav-text {
+                font-size: 1rem;
+            }
+
+            .nav-desc {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                max-width: 300px;
+            }
+
+            .login-card {
+                padding: 1.5rem;
+            }
+
+            .main-logo {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .title-main {
+                font-size: 1.8rem;
+            }
+            
+            .title-sub {
+                font-size: 1rem;
+            }
+
+            .subtitle-text {
+                font-size: 0.9rem;
+            }
+            
+            .nav-button {
+                width: 200px;
+                height: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PANTALLA DE LOGIN -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-card">
+            <img src="logo.png" alt="ITLA Logo" class="login-logo">
+            <h1 class="login-title">BIENVENIDO</h1>
+            <p class="login-subtitle">Ingresa tus credenciales para acceder</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="employeeId" class="form-label">ID de Empleado</label>
+                    <input type="text" id="employeeId" class="form-input" placeholder="Ej: 2765, 0062" maxlength="4" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" id="password" class="form-input" placeholder="Contraseña" required>
+                </div>
+                
+                <button type="submit" class="login-button" id="loginButton">
+                    <span id="loginButtonText">INICIAR SESIÓN</span>
+                    <div class="loading-spinner" id="loadingSpinner"></div>
+                </button>
+                
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- INFORMACIÓN DEL USUARIO LOGUEADO -->
+    <div class="user-info" id="userInfo">
+        <span id="loggedUserName">Usuario</span>
+        <button class="logout-button" onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL (EXISTENTE) -->
+    <div class="splash-container" id="splashContainer">
+        <div class="logo-container">
+            <img src="logo.png" alt="ITLA Logo" class="main-logo">
+        </div>
+        
+        <h1 class="title-main">SISTEMA ADMINISTRATIVO</h1>
+        <h2 class="title-sub">ITLA Santiago</h2>
+        <p class="subtitle-text">Selecciona el módulo al que deseas acceder</p>
+        
+        <div class="navigation-container">
+            <a href="dashboard.html" class="nav-button">
+                <div class="nav-icon">📊</div>
+                <div class="nav-text">Dashboard</div>
+                <div class="nav-desc">Control General</div>
+            </a>
+            
+            <a href="taskboard.html" class="nav-button">
+                <div class="nav-icon">📋</div>
+                <div class="nav-text">TaskBoard</div>
+                <div class="nav-desc">Gestión de Tareas</div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================================
+        // SISTEMA DE LOGIN - EMPLEADOS DE LA BASE DE DATOS
+        // ===================================================================
+        
+        // Lista de empleados con IDs formateados a 4 dígitos
+        const employees = {
+            '9090': { name: 'ADMINISTRATOR', department: 'Sistemas' },
+            '0062': { name: 'ALEJANDRA GONZALEZ', department: 'Administración' },
+            '2767': { name: 'ANGELICA COLON', department: 'Administración' },
+            '2891': { name: 'CARMEN RAMIEREZ', department: 'Administración' },
+            '2493': { name: 'DAURY DE LEON', department: 'Recursos Humanos' },
+            '1771': { name: 'JOEL PEÑA', department: 'Tecnología' },
+            '1638': { name: 'JOSE DE LEON', department: 'Tecnología' },
+            '2494': { name: 'JUNIOR GUILLEN', department: 'Administración' },
+            '2765': { name: 'MARIA GOMEZ', department: 'Administración' },
+            '0061': { name: 'PABEL CRUZ', department: 'Administración' },
+            '1972': { name: 'PENELOPE ABREU', department: 'Recursos Humanos' },
+            '0062': { name: 'RAFAEL LEOTTO', department: 'Tecnología' }
+        };
+
+        // Contraseña temporal para todos los usuarios
+        const DEFAULT_PASSWORD = '0000';
+
+        // Variables de estado
+        let currentUser = null;
+
+        // Verificar si hay una sesión activa al cargar
+        window.addEventListener('load', function() {
+            // No usar localStorage - siempre mostrar login
+            showLoginPage();
+        });
+
+        // Manejar envío del formulario de login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            attemptLogin();
+        });
+
+        // Permitir solo números mientras se escribe
+        document.getElementById('employeeId').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Solo números
+            if (value.length > 4) {
+                value = value.substring(0, 4); // Máximo 4 dígitos
+            }
+            e.target.value = value;
+        });
+
+        // Formatear ID de empleado cuando termina de escribir
+        document.getElementById('employeeId').addEventListener('blur', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Solo números
+            if (value.length > 0 && value.length < 4) {
+                value = value.padStart(4, '0'); // Rellenar con ceros
+                e.target.value = value;
+            }
+        });
+
+        // Función para intentar login
+        function attemptLogin() {
+            const employeeId = document.getElementById('employeeId').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            const loginButton = document.getElementById('loginButton');
+            const buttonText = document.getElementById('loginButtonText');
+            const spinner = document.getElementById('loadingSpinner');
+
+            // Limpiar errores previos
+            hideError();
+
+            // Validaciones básicas
+            if (!employeeId || !password) {
+                showError('Por favor complete todos los campos');
+                return;
+            }
+
+            if (employeeId.length !== 4) {
+                showError('El ID debe tener 4 dígitos');
+                return;
+            }
+
+            // Mostrar loading
+            loginButton.disabled = true;
+            buttonText.style.display = 'none';
+            spinner.style.display = 'block';
+
+            // Simular delay de autenticación
+            setTimeout(() => {
+                // Verificar credenciales
+                if (employees[employeeId] && password === DEFAULT_PASSWORD) {
+                    // Login exitoso - redireccionar a taskboard con ID como parámetro
+                    console.log('✅ Login exitoso para:', employeeId, employees[employeeId].name);
+                    
+                    // Redireccionar a taskboard.html con el ID del usuario
+                    window.location.href = `taskboard.html?user=${employeeId}`;
+                    
+                } else {
+                    // Login fallido
+                    if (!employees[employeeId]) {
+                        showError('ID de empleado no encontrado');
+                    } else {
+                        showError('Contraseña incorrecta');
+                    }
+                    
+                    // Ocultar loading
+                    loginButton.disabled = false;
+                    buttonText.style.display = 'block';
+                    spinner.style.display = 'none';
+                }
+            }, 1500);
+        }
+
+        // Mostrar página de login
+        function showLoginPage() {
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('splashContainer').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+            
+            // Limpiar formulario
+            document.getElementById('loginForm').reset();
+            hideError();
+        }
+
+        // Mostrar página principal - Ya no se usa (se redirecciona directamente)
+        function showMainPage() {
+            console.log('showMainPage() ya no se usa - se redirecciona directamente a taskboard.html');
+        }
+
+        // Cerrar sesión - Solo redireccionar (no localStorage)
+        function logout() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                window.location.href = 'index.html';
+                console.log('🚪 Sesión cerrada');
+            }
+        }
+
+        // Mostrar error
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Ocultar error
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // ===================================================================
+        // EFECTOS ORIGINALES (SIN CAMBIOS)
+        // ===================================================================
+        
+        // Efectos del logo principal cuando se muestra
+        function initMainPageEffects() {
+            const logo = document.querySelector('.main-logo');
+            
+            if (logo) {
+        setInterval(() => {
+            logo.style.transform = 'scale(1.01)';
+            logo.style.boxShadow = '0 25px 80px rgba(0, 0, 0, 0.4), 0 0 0 8px rgba(255, 255, 255, 0.15), 0 0 0 16px rgba(255, 255, 255, 0.08), inset 0 4px 0 rgba(255, 255, 255, 0.4)';
+            setTimeout(() => {
+                logo.style.transform = 'scale(1)';
+                logo.style.boxShadow = '0 25px 80px rgba(0, 0, 0, 0.3), 0 0 0 8px rgba(255, 255, 255, 0.1), 0 0 0 16px rgba(255, 255, 255, 0.05), inset 0 4px 0 rgba(255, 255, 255, 0.3)';
+            }, 300);
+        }, 3000);
+            }
+        }
+
+        // Efecto ripple en botones
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.nav-button')) {
+                const button = e.target.closest('.nav-button');
+                const ripple = document.createElement('div');
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.6)';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.animation = 'ripple 0.6s linear';
+                ripple.style.left = (e.offsetX || 50) - 10 + 'px';
+                ripple.style.top = (e.offsetY || 50) - 10 + 'px';
+                ripple.style.width = '20px';
+                ripple.style.height = '20px';
+                
+                button.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            }
+        });
+
+        // CSS para animación ripple
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                0% {
+                    transform: scale(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Inicializar efectos cuando se muestra la página principal
+        setTimeout(initMainPageEffects, 1000);
+
+        // ===================================================================
+        // INFORMACIÓN DE DESARROLLO
+        // ===================================================================
+        console.log('🔐 Sistema de Login ITLA Inicializado');
+        console.log('👥 Empleados registrados:', Object.keys(employees).length);
+        console.log('🔑 Contraseña temporal para todos:', DEFAULT_PASSWORD);
+        console.log('📝 Usuarios disponibles:');
+        Object.entries(employees).forEach(([id, user]) => {
+            console.log(`   • ${id}: ${user.name} (${user.department})`);
+        });
+    </script>
+</body>
+</html> 

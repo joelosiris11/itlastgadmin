@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Archivos de tareas - Acceso completo para desarrollo
+    match /tasks/{taskId}/{allPaths=**} {
+      allow read, write: if true
+        && request.resource.size < 50 * 1024 * 1024 // 50MB
+        && (
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType.matches('application/pdf') ||
+          request.resource.contentType.matches('application/vnd.ms-excel') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+          request.resource.contentType.matches('application/msword') ||
+          request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+          request.resource.contentType.matches('text/plain') ||
+          request.resource.contentType.matches('text/csv')
+        );
+    }
+    // Permitir lectura de archivos existentes
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+  }
+}

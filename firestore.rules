@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Tareas - Acceso completo para desarrollo
+    match /tasks/{taskId} {
+      allow read, write: if true;
+    }
+    // Empleados - Solo lectura para la app
+    match /employees/{employeeId} {
+      allow read, write: if true;
+    }
+    // Comentarios y archivos
+    match /comments/{commentId} {
+      allow read, write: if true;
+    }
+    // Registros de ponche
+    match /punch_records/{recordId} {
+      allow read, write: if true;
+    }
+    // Historial de tareas
+    match /task_history/{historyId} {
+      allow read, write: if true;
+    }
+    // Permitir acceso a cualquier documento para desarrollo
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

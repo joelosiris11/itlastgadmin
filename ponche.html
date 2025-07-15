@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ponche - ITLA</title>
+    
+    <!-- Supabase JavaScript Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Firebase SDK UMD para uso en <script> clásico -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            backdrop-filter: blur(5px);
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        /* SECCIÓN DE UPLOAD - OPTIMIZADA PARA MÓVIL */
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 10px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-section h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px 20px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e6f3ff 100%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #f0fff4 0%, #e8f5e8 100%);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: #666;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-section {
+            margin: 15px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .log-section {
+            background: rgba(248, 249, 250, 0.9);
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            display: none;
+            text-align: left;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(6, 1fr);
+            gap: 1px;
+            background: #dee2e6;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .day-header {
+            background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 11px;
+            color: #495057;
+        }
+
+        .employee-row {
+            display: contents;
+        }
+
+        .employee-name {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 10px 8px;
+            font-weight: 600;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            border-right: 2px solid #dee2e6;
+            color: #495057;
+        }
+
+        .day-cell {
+            background: white;
+            padding: 6px;
+            min-height: 50px;
+            font-size: 9px;
+            position: relative;
+        }
+
+        .punch-record {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 8px;
+            margin: 1px 0;
+            font-size: 8px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .punch-record.exit {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+        }
+
+        .punch-record.unknown {
+            background: linear-gradient(135deg, #6c757d 0%, #95a5a6 100%);
+        }
+
+        .no-data {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        /* RESPONSIVE DESIGN PARA MÓVIL */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .logo {
+                width: 50px;
+                height: 50px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .stats {
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 10px 15px;
+                min-width: 100px;
+            }
+
+            .stat-number {
+                font-size: 20px;
+            }
+
+            .upload-section {
+                margin: 5px;
+                padding: 15px;
+            }
+
+            .upload-area {
+                padding: 20px 15px;
+            }
+
+            .upload-icon {
+                font-size: 30px;
+            }
+
+            .upload-text {
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 12px;
+                margin: 5px;
+            }
+
+            .calendar-container {
+                padding: 15px;
+                margin-top: 15px;
+            }
+
+            .calendar-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .calendar-title {
+                font-size: 16px;
+                order: -1;
+            }
+
+            .nav-btn {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            .calendar-grid {
+                grid-template-columns: 100px repeat(6, 1fr);
+                font-size: 10px;
+            }
+
+            .day-header {
+                padding: 8px 4px;
+                font-size: 11px;
+            }
+
+            .employee-name {
+                padding: 8px 4px;
+                font-size: 10px;
+            }
+
+            .day-cell {
+                padding: 4px;
+                min-height: 40px;
+            }
+
+            .punch-record {
+                font-size: 10px;
+                padding: 2px 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .calendar-grid {
+                grid-template-columns: 80px repeat(6, 1fr);
+            }
+
+            .day-header {
+                font-size: 10px;
+                padding: 6px 2px;
+            }
+
+            .employee-name {
+                font-size: 9px;
+            }
+
+            .punch-record {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <img src="logo.png" alt="ITLA Logo" class="logo">
+            <div>
+                <h1>🏢 Sistema de Ponche ITLA</h1>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalEmployees">0</div>
+                        <div class="stat-label">Empleados Activos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPunches">0</div>
+                        <div class="stat-label">Ponches Esta Semana</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayPunches">0</div>
+                        <div class="stat-label">Ponches Hoy</div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='dashboard.html'">
+                        <div class="stat-number">📊</div>
+                        <div class="stat-label">Ver Dashboard</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DE UPLOAD OPTIMIZADA -->
+    <div class="upload-section">
+        <h2>📤 Cargar Nuevo Archivo de Ponche</h2>
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Arrastra tu archivo .dat aquí</div>
+            <div class="upload-hint">o haz clic para seleccionar</div>
+            <input type="file" id="fileInput" accept=".dat" />
+        </div>
+        <button class="btn" onclick="document.getElementById('fileInput').click()">
+            📂 Seleccionar Archivo .dat
+        </button>
+        <button class="btn" id="processBtn" onclick="processFile()" disabled>
+            ⚡ Procesar y Cargar a DB
+        </button>
+        
+        <div class="progress-section" id="progressSection">
+            <div>Procesando archivo...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <div class="log-section" id="logSection"></div>
+    </div>
+
+    <div class="container">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <button class="nav-btn" onclick="previousWeek()">← Semana Anterior</button>
+                <div class="calendar-title" id="weekTitle">Semana del 23 - 29 Junio 2025</div>
+                <button class="nav-btn" onclick="nextWeek()">Siguiente Semana →</button>
+            </div>
+            
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- El calendario se genera dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCSghpdjS6UyqIjZrh8Lx3b0BdunMlDZs",
+            authDomain: "itlastg25.firebaseapp.com",
+            projectId: "itlastg25",
+            storageBucket: "itlastg25.firebasestorage.app",
+            messagingSenderId: "166443905167",
+            appId: "1:166443905167:web:472ec92225a62ef45c80fa"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Variables globales
+        let employees = [];
+        let punchRecords = [];
+        // Calcular semana actual
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, etc.
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Ajustar para que lunes sea inicio
+        let currentWeekStart = new Date(today);
+        currentWeekStart.setDate(today.getDate() + mondayOffset);
+        let selectedFile = null;
+        let parsedData = [];
+
+        // **FUNCIONALIDAD: UPLOAD DE ARCHIVOS**
+
+        // Configurar drag & drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const processBtn = document.getElementById('processBtn');
+        const progressSection = document.getElementById('progressSection');
+        const logSection = document.getElementById('logSection');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.dat')) {
+                alert('❌ Por favor selecciona un archivo .dat');
+                return;
+            }
+
+            selectedFile = file;
+            log(`📁 Archivo seleccionado: ${file.name} (${(file.size/1024).toFixed(2)} KB)`);
+            
+            // Leer archivo automáticamente
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                parsedData = parseData(content);
+                
+                if (parsedData.length > 0) {
+                    log(`✅ Archivo parseado: ${parsedData.length} registros encontrados`);
+                    processBtn.disabled = false;
+                    
+                    // Mostrar preview
+                    log(`📋 Preview primeros 3 registros:`);
+                    parsedData.slice(0, 3).forEach((record, i) => {
+                        // Extractor de tiempo universal - igual lógica que el calendario
+                        let time;
+                        try {
+                            let cleanDateTime = record.punch_datetime.split('+')[0].split('Z')[0];
+                            let timePart;
+                            if (cleanDateTime.includes('T')) {
+                                timePart = cleanDateTime.split('T')[1];
+                            } else if (cleanDateTime.includes(' ')) {
+                                timePart = cleanDateTime.split(' ')[1];
+                            } else {
+                                timePart = '??:??';
+                            }
+                            time = timePart && timePart.includes(':') ? timePart.substring(0, 5) : '??:??';
+                        } catch (error) {
+                            time = '??:??';
+                        }
+                        
+                        const typeText = record.punch_type === 'entry' ? 'ENTRADA' : 'SALIDA';
+                        log(`${i+1}. ID: ${record.employee_id} | ${typeText} ${time} | ${record.raw_data.name}`);
+                    });
+                } else {
+                    log(`❌ No se pudieron extraer datos del archivo`);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseData(content) {
+            const lines = content.trim().split('\n');
+            const records = [];
+            
+            log(`🔍 Procesando ${lines.length} líneas...`);
+            
+            lines.forEach((line, index) => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                
+                // Intentar formato CON nombre: "ID datetime col1 col2 col3 col4 NOMBRE"
+                let match = trimmed.match(/^\s*(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.+)$/);
+                let hasName = true;
+                
+                // Si no coincide, intentar formato SIN nombre: "ID datetime col1 col2 col3 col4"
+                if (!match) {
+                    match = trimmed.match(/^\s*(\d+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/);
+                    hasName = false;
+                }
+                
+                if (match) {
+                    const employee_id = match[1];
+                    const datetime = match[2];
+                    const col3 = match[3];
+                    const code = match[4];
+                    const col5 = match[5];
+                    const col6 = match[6];
+                    const name = hasName ? match[7].trim() : `Empleado ${employee_id}`;
+                    
+                    const currentDate = datetime.split(' ')[0]; // Extraer fecha
+                    
+                    records.push({
+                        employee_id: employee_id,
+                        punch_datetime: datetime + '+00:00', // Convertir a ISO
+                        punch_date: currentDate,
+                        punch_type: determinePunchType(code, records.filter(r => r.employee_id === employee_id), currentDate),
+                        raw_data: {
+                            code: parseInt(code),
+                            col3: parseInt(col3),
+                            col5: parseInt(col5),
+                            col6: parseInt(col6),
+                            name: name,
+                            has_original_name: hasName
+                        }
+                    });
+                } else {
+                    log(`⚠️ Línea ${index + 1} no reconocida: ${trimmed.substring(0, 50)}...`);
+                }
+            });
+            
+            return records;
+        }
+
+        function determinePunchType(code, previousRecords, currentDate) {
+            const codeInt = parseInt(code);
+            
+            // Contar registros del MISMO DÍA únicamente
+            const sameDayRecords = previousRecords.filter(record => 
+                record.punch_date === currentDate
+            );
+            const sameDayCount = sameDayRecords.length;
+            
+            // Lógica simple: alternar entry/exit basado en registros DEL MISMO DÍA
+            if (codeInt === 2) return 'entry';  // Código 2 siempre entrada
+            if (codeInt === 0) return 'exit';   // Código 0 siempre salida
+            
+            // Para otros códigos, alternar según el conteo del día
+            return (sameDayCount % 2 === 0) ? 'entry' : 'exit';
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('logSection');
+            logDiv.style.display = 'block';
+            logDiv.innerHTML += message + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function processFile() {
+            if (!parsedData || parsedData.length === 0) {
+                alert('❌ No hay datos para procesar');
+                return;
+            }
+
+            progressSection.style.display = 'block';
+            processBtn.disabled = true;
+            
+            log(`🚀 Iniciando procesamiento de ${parsedData.length} registros...`);
+            
+            try {
+                // VALIDACIÓN ANTI-DUPLICADOS POR DÍA
+                log(`🔍 Verificando duplicados por fecha...`);
+                
+                // Extraer fechas únicas del archivo
+                const uniqueDates = [...new Set(parsedData.map(record => record.punch_date))];
+                log(`📅 Fechas en el archivo: ${uniqueDates.join(', ')}`);
+                
+                // Verificar si ya existen registros para estas fechas
+                const empSnapshot = await db.collection("employees").where("active", "==", true).get();
+                const existingEmployees = empSnapshot.docs.map(doc => doc.data());
+
+                const punchSnapshot = await db.collection("punch_records").where("punch_date", "in", uniqueDates).get();
+                const existingPunches = punchSnapshot.docs.map(doc => doc.data());
+
+                const duplicateDates = [...new Set(existingPunches.map(r => r.punch_date))];
+                log(`❌ DUPLICADOS DETECTADOS para las fechas: ${duplicateDates.join(', ')}`);
+                log(`⚠️ No se puede procesar el archivo porque ya existen datos para estos días.`);
+                log(`💡 Si necesitas actualizar datos, elimina primero los registros existentes.`);
+                
+                alert(`❌ Error: Ya existen datos para las siguientes fechas:\n\n${duplicateDates.join('\n')}\n\nNo se pueden subir datos duplicados del mismo día.`);
+                return;
+                
+                log(`✅ No se detectaron duplicados. Procediendo con la carga...`);
+                // Crear empleados únicos
+                const uniqueEmployees = [...new Set(parsedData.map(r => r.employee_id))]
+                    .map(id => {
+                        const record = parsedData.find(r => r.employee_id === id);
+                        return {
+                            employee_id: id,
+                            name: record.raw_data.name,
+                            active: true
+                        };
+                    });
+
+                log(`👥 Insertando ${uniqueEmployees.length} empleados...`);
+                
+                for (const emp of uniqueEmployees) {
+                    const { error: empError } = await supabase
+                        .from('employees')
+                        .upsert(emp, { onConflict: 'employee_id' });
+                    
+                    if (empError) {
+                        log(`❌ Error empleado ${emp.employee_id}: ${empError.message}`);
+                    } else {
+                        log(`✅ Empleado ${emp.employee_id} - ${emp.name}`);
+                    }
+                }
+
+                // Insertar registros de ponche
+                log(`📝 Insertando ${parsedData.length} registros de ponche...`);
+                
+                let processed = 0;
+                for (const record of parsedData) {
+                    const { error: punchError } = await supabase
+                        .from('punch_records')
+                        .insert(record);
+                    
+                    if (punchError) {
+                        log(`❌ Error registro: ${punchError.message}`);
+                    } else {
+                        processed++;
+                        const progress = (processed / parsedData.length) * 100;
+                        document.getElementById('progressFill').style.width = progress + '%';
+                    }
+                }
+
+                log(`🎉 ¡Procesamiento completado! ${processed}/${parsedData.length} registros insertados`);
+                
+                // Recargar datos
+                await loadData();
+                
+            } catch (error) {
+                log(`💥 Error crítico: ${error.message}`);
+            } finally {
+                processBtn.disabled = false;
+                setTimeout(() => {
+                    progressSection.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // **RESTO DE FUNCIONES (SIN CAMBIOS EN LA LÓGICA DE DB)**
+        
+        async function loadData() {
+            try {
+                const empSnapshot = await db.collection("employees").where("active", "==", true).get();
+                employees = empSnapshot.docs.map(doc => doc.data());
+
+                const punchSnapshot = await db.collection("punch_records").orderBy("punch_datetime", "asc").get();
+                punchRecords = punchSnapshot.docs.map(doc => doc.data());
+
+                updateStatistics();
+                generateCalendar();
+                
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                document.getElementById('totalEmployees').textContent = 'Error';
+                document.getElementById('totalPunches').textContent = 'Error';
+                document.getElementById('todayPunches').textContent = 'Error';
+            }
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalEmployees').textContent = employees.length;
+            
+            const weekStart = new Date(currentWeekStart);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 5);
+            
+            const weekPunches = punchRecords.filter(record => {
+                const recordDate = new Date(record.punch_date);
+                return recordDate >= weekStart && recordDate <= weekEnd;
+            });
+            
+            document.getElementById('totalPunches').textContent = weekPunches.length;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const todayPunches = punchRecords.filter(record => record.punch_date === today);
+            document.getElementById('todayPunches').textContent = todayPunches.length;
+        }
+
+        function generateCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            // Encabezados de días
+            calendarGrid.innerHTML += '<div class="day-header">Empleado</div>';
+            const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            for (let i = 0; i < 6; i++) {
+                const date = new Date(currentWeekStart);
+                date.setDate(date.getDate() + i);
+                const dayName = daysOfWeek[i];
+                const dayNumber = date.getDate();
+                calendarGrid.innerHTML += `<div class="day-header">${dayName}<br>${dayNumber}</div>`;
+            }
+
+            // Filas de empleados
+            employees.forEach(employee => {
+                calendarGrid.innerHTML += `<div class="employee-row">
+                    <div class="employee-name">${employee.name}<br><small>ID: ${employee.employee_id}</small></div>
+                </div>`;
+
+                // Celdas de días para este empleado
+                for (let day = 0; day < 6; day++) {
+                    const date = new Date(currentWeekStart);
+                    date.setDate(date.getDate() + day);
+                    const dateStr = date.toISOString().split('T')[0];
+
+                    const dayPunches = punchRecords.filter(record => 
+                        record.employee_id === employee.employee_id && 
+                        record.punch_date === dateStr
+                    );
+
+                    let cellContent = '';
+                    dayPunches.forEach(punch => {
+                        // Extractor de tiempo universal - MISMO código que en parseData
+                        let time;
+                        try {
+                            let cleanDateTime = punch.punch_datetime.split('+')[0].split('Z')[0];
+                            let timePart;
+                            if (cleanDateTime.includes('T')) {
+                                timePart = cleanDateTime.split('T')[1];
+                            } else if (cleanDateTime.includes(' ')) {
+                                timePart = cleanDateTime.split(' ')[1];
+                            } else {
+                                timePart = '??:??';
+                            }
+                            time = timePart && timePart.includes(':') ? timePart.substring(0, 5) : '??:??';
+                        } catch (error) {
+                            time = '??:??';
+                        }
+
+                        const typeClass = punch.punch_type === 'entry' ? '' : punch.punch_type === 'exit' ? 'exit' : 'unknown';
+                        cellContent += `<div class="punch-record ${typeClass}">${time}</div>`;
+                    });
+
+                    calendarGrid.innerHTML += `<div class="day-cell">${cellContent}</div>`;
+                }
+            });
+
+            updateWeekTitle();
+        }
+
+        function updateWeekTitle() {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 5);
+            
+            const startStr = currentWeekStart.toLocaleDateString('es-ES', { 
+                day: 'numeric', 
+                month: 'short' 
+            });
+            const endStr = weekEnd.toLocaleDateString('es-ES', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+            });
+            
+            document.getElementById('weekTitle').textContent = `Semana del ${startStr} - ${endStr}`;
+        }
+
+        function previousWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+            generateCalendar();
+        }
+
+        function nextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            generateCalendar();
+        }
+
+        // Cargar datos al iniciar
+        loadData();
+    </script>
+</body>
+</html>
