@@ -718,7 +718,18 @@
 
         // Verificar si hay una sesión activa al cargar
         window.addEventListener('load', function() {
-            // No usar localStorage - siempre mostrar login
+            const storedUser = sessionStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.id) {
+                        window.location.href = `taskboard.html?user=${user.id}`;
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error leyendo sesión almacenada:', e);
+                }
+            }
             showLoginPage();
         });
 
@@ -778,9 +789,16 @@
             setTimeout(() => {
                 // Verificar credenciales
                 if (employees[employeeId] && password === DEFAULT_PASSWORD) {
-                    // Login exitoso - redireccionar a taskboard con ID como parámetro
+                    // Login exitoso - guardar sesión y redirigir
                     console.log('✅ Login exitoso para:', employeeId, employees[employeeId].name);
-                    
+
+                    const userData = {
+                        id: employeeId,
+                        name: employees[employeeId].name,
+                        department: employees[employeeId].department
+                    };
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+
                     // Redireccionar a taskboard.html con el ID del usuario
                     window.location.href = `taskboard.html?user=${employeeId}`;
                     
@@ -816,9 +834,10 @@
             console.log('showMainPage() ya no se usa - se redirecciona directamente a taskboard.html');
         }
 
-        // Cerrar sesión - Solo redireccionar (no localStorage)
+        // Cerrar sesión y limpiar la sesión almacenada
         function logout() {
             if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                sessionStorage.removeItem('currentUser');
                 window.location.href = 'index.html';
                 console.log('🚪 Sesión cerrada');
             }
