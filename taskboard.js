@@ -1589,159 +1589,54 @@ function displayCommentsHistory(commentsString) {
 // Función para procesar contenido de comentarios con archivos
 function processCommentContent(comment) {
     console.log('🔍 Procesando comentario:', comment);
-    
+
     if (!comment.includes('📎') || !comment.includes('FILE_ID:')) {
         return escapeHtml(comment);
     }
-    
-    // NUEVA LÓGICA: Separar texto de archivos en la misma línea
+
+    // Separar el texto del listado de archivos
     let textPart = comment;
     const fileMatches = comment.match(/📎[^|]*\|FILE_ID:[^\s]+/g);
-    
+
     if (fileMatches) {
-        // Remover todos los archivos del texto para obtener solo el texto limpio
         fileMatches.forEach(fileMatch => {
             textPart = textPart.replace(fileMatch, '').trim();
         });
     }
-    
+
     let processedContent = '';
-    
-    // Agregar texto del comentario si existe
+
     if (textPart) {
         processedContent += escapeHtml(textPart);
     }
-    
-    // Agregar archivos si existen - VERSIÓN SIMPLIFICADA
+
     if (fileMatches && fileMatches.length > 0) {
         if (processedContent) {
             processedContent += '<br><br>';
         }
-        
-        processedContent += '<div style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 16px; border-radius: 12px; border: 1px solid #cbd5e1; margin-top: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">';
-        processedContent += '<div style="font-size: 0.9rem; color: #475569; margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.1rem;">📎</span>Archivos adjuntos</div>';
-        
+
+        processedContent += '<div class="comment-files" style="margin-top:8px;">';
+
         fileMatches.forEach(fileMatch => {
-            console.log('📎 Procesando archivo:', fileMatch);
-            
-            // Extraer información del archivo desde el match
-            const match = fileMatch.match(/📎\s*(.+?)\s*\(([^)]+)\)\s*\|FILE_ID:([^\s]+)/);
+            const match = fileMatch.match(/📎\s*(.+?)(?:\s*\([^)]*\))?\s*\|FILE_ID:([^\s]+)/);
+            let fileName = 'archivo';
+            let fileId = '';
             if (match) {
-                const fileName = match[1];
-                const fileSize = match[2];
-                const fileId = match[3];
-                
-                console.log('📎 Archivo encontrado:', { fileName, fileSize, fileId });
-                
-                // Mostrar información mejorada del archivo
-                processedContent += `
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        gap: 12px; 
-                        padding: 12px; 
-                        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); 
-                        border: 1px solid #e2e8f0; 
-                        border-radius: 8px; 
-                        margin-bottom: 8px;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                        transition: all 0.2s ease;
-                        cursor: pointer;
-                    " data-file-id="${fileId}" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'">
-                        <div style="
-                            width: 40px; 
-                            height: 40px; 
-                            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
-                            border-radius: 8px; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            color: white; 
-                            font-size: 1.2rem;
-                            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-                        ">
-                            📄
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; word-break: break-word; margin-bottom: 2px;">
-                                ${escapeHtml(fileName)}
-                            </div>
-                            <div style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 4px;">
-                                <span style="color: #10b981;">●</span>
-                                ${escapeHtml(fileSize)}
-                            </div>
-                        </div>
-                        <div style="
-                            padding: 6px 12px; 
-                            background: rgba(59, 130, 246, 0.1); 
-                            border: 1px solid rgba(59, 130, 246, 0.2); 
-                            border-radius: 6px; 
-                            font-size: 0.8rem; 
-                            color: #1e40af; 
-                            font-weight: 600;
-                        ">
-                            Adjunto
-                        </div>
-                        <span style="display: none;">FILE_ID:${fileId}</span>
-                    </div>
-                `;
-            } else {
-                console.log('⚠️ No se pudo parsear archivo:', fileMatch);
-                // Fallback: mostrar información básica mejorada
-                processedContent += `
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        gap: 12px; 
-                        padding: 12px; 
-                        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); 
-                        border: 1px solid #d1d5db; 
-                        border-radius: 8px; 
-                        margin-bottom: 8px;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                        opacity: 0.8;
-                    ">
-                        <div style="
-                            width: 40px; 
-                            height: 40px; 
-                            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
-                            border-radius: 8px; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            color: white; 
-                            font-size: 1.2rem;
-                        ">
-                            📄
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; color: #374151; font-size: 0.9rem; margin-bottom: 2px;">
-                                Archivo adjunto
-                            </div>
-                            <div style="font-size: 0.8rem; color: #6b7280; display: flex; align-items: center; gap: 4px;">
-                                <span style="color: #f59e0b;">●</span>
-                                Información no disponible
-                            </div>
-                        </div>
-                        <div style="
-                            padding: 6px 12px; 
-                            background: rgba(156, 163, 175, 0.1); 
-                            border: 1px solid rgba(156, 163, 175, 0.2); 
-                            border-radius: 6px; 
-                            font-size: 0.8rem; 
-                            color: #6b7280; 
-                            font-weight: 600;
-                        ">
-                            Error
-                        </div>
-                    </div>
-                `;
+                fileName = match[1];
+                fileId = match[2];
             }
+
+            processedContent += `
+                <div data-file-id="${fileId}" style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span style="flex:1;word-break:break-word;">${escapeHtml(fileName)}</span>
+                    <button onclick="openFilePreview('${fileId}')" style="background:#3b82f6;color:white;border:none;border-radius:4px;padding:2px 8px;font-size:0.75rem;cursor:pointer;">Ver</button>
+                </div>
+            `;
         });
-        
+
         processedContent += '</div>';
     }
-    
+
     return processedContent;
 }
 
