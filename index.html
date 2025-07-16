@@ -658,6 +658,28 @@
         </div>
     </div>
 
+    <!-- FORMULARIO DE CAMBIO DE CONTRASEÑA -->
+    <div class="login-container" id="passwordChangeContainer" style="display:none;">
+        <div class="login-card">
+            <h1 class="login-title">Cambiar Contraseña</h1>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                    <input type="password" id="newPassword" class="form-input" placeholder="Nueva contraseña" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+                    <input type="password" id="confirmPassword" class="form-input" placeholder="Repite la contraseña" required>
+                </div>
+                <button type="submit" class="login-button" id="changePasswordButton">
+                    <span id="changePasswordButtonText">GUARDAR</span>
+                    <div class="loading-spinner" id="changeLoadingSpinner"></div>
+                </button>
+                <div id="changeErrorMessage" class="error-message" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
     <!-- INFORMACIÓN DEL USUARIO LOGUEADO -->
     <div class="user-info" id="userInfo">
         <span id="loggedUserName">Usuario</span>
@@ -689,11 +711,26 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
         // ===================================================================
         // SISTEMA DE LOGIN - EMPLEADOS DE LA BASE DE DATOS
         // ===================================================================
-        
+
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+        import { getFirestore, doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCSghpdjS6UyqIjZrh8Lx3b0BdunMlDZs",
+            authDomain: "itlastg25.firebaseapp.com",
+            projectId: "itlastg25",
+            storageBucket: "itlastg25.firebasestorage.app",
+            messagingSenderId: "166443905167",
+            appId: "1:166443905167:web:472ec92225a62ef45c80fa"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         // Lista de empleados con IDs formateados a 4 dígitos
         const employees = {
             '9090': { name: 'ADMINISTRATOR', department: 'Sistemas' },
@@ -715,10 +752,22 @@
 
         // Variables de estado
         let currentUser = null;
+        let pendingUser = null;
 
         // Verificar si hay una sesión activa al cargar
         window.addEventListener('load', function() {
-            // No usar localStorage - siempre mostrar login
+            const storedUser = sessionStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.id) {
+                        window.location.href = `taskboard.html?user=${user.id}`;
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error leyendo sesión almacenada:', e);
+                }
+            }
             showLoginPage();
         });
 
@@ -726,6 +775,11 @@
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             attemptLogin();
+        });
+
+        document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleChangePassword();
         });
 
         // Permitir solo números mientras se escribe
@@ -747,18 +801,15 @@
         });
 
         // Función para intentar login
-        function attemptLogin() {
+        async function attemptLogin() {
             const employeeId = document.getElementById('employeeId').value.trim();
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('errorMessage');
             const loginButton = document.getElementById('loginButton');
             const buttonText = document.getElementById('loginButtonText');
             const spinner = document.getElementById('loadingSpinner');
 
-            // Limpiar errores previos
             hideError();
 
-            // Validaciones básicas
             if (!employeeId || !password) {
                 showError('Por favor complete todos los campos');
                 return;
@@ -769,35 +820,56 @@
                 return;
             }
 
-            // Mostrar loading
             loginButton.disabled = true;
             buttonText.style.display = 'none';
             spinner.style.display = 'block';
 
-            // Simular delay de autenticación
-            setTimeout(() => {
-                // Verificar credenciales
-                if (employees[employeeId] && password === DEFAULT_PASSWORD) {
-                    // Login exitoso - redireccionar a taskboard con ID como parámetro
-                    console.log('✅ Login exitoso para:', employeeId, employees[employeeId].name);
-                    
-                    // Redireccionar a taskboard.html con el ID del usuario
-                    window.location.href = `taskboard.html?user=${employeeId}`;
-                    
-                } else {
-                    // Login fallido
-                    if (!employees[employeeId]) {
-                        showError('ID de empleado no encontrado');
-                    } else {
-                        showError('Contraseña incorrecta');
-                    }
-                    
-                    // Ocultar loading
+            try {
+                const empRef = doc(db, 'employees', employeeId);
+                const empSnap = await getDoc(empRef);
+
+                if (!empSnap.exists()) {
+                    showError('ID de empleado no encontrado');
                     loginButton.disabled = false;
                     buttonText.style.display = 'block';
                     spinner.style.display = 'none';
+                    return;
                 }
-            }, 1500);
+
+                const employee = empSnap.data();
+
+                if (employee.password !== password) {
+                    showError('Contraseña incorrecta');
+                    loginButton.disabled = false;
+                    buttonText.style.display = 'block';
+                    spinner.style.display = 'none';
+                    return;
+                }
+
+                pendingUser = {
+                    id: employee.employee_id,
+                    name: employee.name,
+                    department: employee.department
+                };
+
+                if (employee.first_login) {
+                    showChangePasswordPage();
+                    loginButton.disabled = false;
+                    buttonText.style.display = 'block';
+                    spinner.style.display = 'none';
+                    return;
+                }
+
+                sessionStorage.setItem('currentUser', JSON.stringify(pendingUser));
+                window.location.href = `taskboard.html?user=${employeeId}`;
+
+            } catch (error) {
+                console.error('Error al iniciar sesión:', error);
+                showError('Error al iniciar sesión');
+                loginButton.disabled = false;
+                buttonText.style.display = 'block';
+                spinner.style.display = 'none';
+            }
         }
 
         // Mostrar página de login
@@ -805,10 +877,74 @@
             document.getElementById('loginContainer').style.display = 'block';
             document.getElementById('splashContainer').style.display = 'none';
             document.getElementById('userInfo').style.display = 'none';
-            
+            document.getElementById('passwordChangeContainer').style.display = 'none';
+
             // Limpiar formulario
             document.getElementById('loginForm').reset();
             hideError();
+        }
+
+        function showChangePasswordPage() {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('passwordChangeContainer').style.display = 'block';
+            document.getElementById('changePasswordForm').reset();
+            hideChangeError();
+        }
+
+        async function handleChangePassword() {
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
+            const changeButton = document.getElementById('changePasswordButton');
+            const buttonText = document.getElementById('changePasswordButtonText');
+            const spinner = document.getElementById('changeLoadingSpinner');
+
+            hideChangeError();
+
+            if (!newPass || !confirmPass) {
+                showChangeError('Complete todos los campos');
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                showChangeError('Las contraseñas no coinciden');
+                return;
+            }
+
+            if (newPass.length < 4) {
+                showChangeError('La contraseña es muy corta');
+                return;
+            }
+
+            changeButton.disabled = true;
+            buttonText.style.display = 'none';
+            spinner.style.display = 'block';
+
+            try {
+                await updateDoc(doc(db, 'employees', pendingUser.id), {
+                    password: newPass,
+                    first_login: false
+                });
+
+                sessionStorage.setItem('currentUser', JSON.stringify(pendingUser));
+                window.location.href = `taskboard.html?user=${pendingUser.id}`;
+
+            } catch (error) {
+                console.error('Error actualizando contraseña:', error);
+                showChangeError('Error guardando la contraseña');
+                changeButton.disabled = false;
+                buttonText.style.display = 'block';
+                spinner.style.display = 'none';
+            }
+        }
+
+        function showChangeError(message) {
+            const div = document.getElementById('changeErrorMessage');
+            div.textContent = message;
+            div.style.display = 'block';
+        }
+
+        function hideChangeError() {
+            document.getElementById('changeErrorMessage').style.display = 'none';
         }
 
         // Mostrar página principal - Ya no se usa (se redirecciona directamente)
@@ -816,9 +952,10 @@
             console.log('showMainPage() ya no se usa - se redirecciona directamente a taskboard.html');
         }
 
-        // Cerrar sesión - Solo redireccionar (no localStorage)
+        // Cerrar sesión y limpiar la sesión almacenada
         function logout() {
             if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                sessionStorage.removeItem('currentUser');
                 window.location.href = 'index.html';
                 console.log('🚪 Sesión cerrada');
             }
