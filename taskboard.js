@@ -880,6 +880,9 @@ async function initApp() {
         // IMPORTANTE: Configurar event listeners DESPUÉS de cargar todo
         setupDragAndDrop();
         
+        // Configurar botón Dashboard solo para administradores
+        configureDashboardButton();
+        
         showNotification(`TaskBoard listo - Bienvenido ${currentUser.name}`, 'success');
         console.log('✅ Aplicación inicializada correctamente');
         
@@ -960,17 +963,17 @@ function createTaskElement(task) {
     }
     
     taskElement.innerHTML = `
-        <div class="task-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+        <div class="task-header">
             <div class="task-title">${escapeHtml(task.title)}</div>
-            <div style="color: #a0aec0; font-size: 0.8rem; opacity: 0.7;" title="${permissionTitle}">${permissionIcon}</div>
+            <div class="task-permission-icon" title="${permissionTitle}">${permissionIcon}</div>
         </div>
         ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
         <div class="task-meta">
-            <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <div class="task-assignee">${escapeHtml(assigneeName)}</div>
                 <div class="task-priority ${priorityClass}">${priorityText}</div>
             </div>
-            ${dueDate ? `<div style="font-size: 0.8rem; color: #a0aec0;">📅 ${dueDate}</div>` : ''}
+            ${dueDate ? `<div class="task-date">📅 ${dueDate}</div>` : ''}
         </div>
     `;
 
@@ -1172,6 +1175,7 @@ function openTaskDetailModal(taskId) {
     console.log('🔐 Permisos:', { canEdit, canMove, isAdmin: isAdmin() });
     
     // Llenar los campos del formulario
+    console.log('🔍 Obteniendo elementos del formulario...');
     const titleInput = document.getElementById('editTaskTitle');
     const descriptionInput = document.getElementById('editTaskDescription');
     const assigneeSelect = document.getElementById('editTaskAssignee');
@@ -1181,6 +1185,18 @@ function openTaskDetailModal(taskId) {
     const commentsInput = document.getElementById('editTaskComments');
     const submitButton = document.getElementById('editTaskSubmitBtn');
     const deleteButton = document.querySelector('[onclick="deleteCurrentTask()"]');
+    
+    console.log('📝 Elementos encontrados:', {
+        titleInput: !!titleInput,
+        descriptionInput: !!descriptionInput,
+        assigneeSelect: !!assigneeSelect,
+        prioritySelect: !!prioritySelect,
+        statusSelect: !!statusSelect,
+        dueDateInput: !!dueDateInput,
+        commentsInput: !!commentsInput,
+        submitButton: !!submitButton,
+        deleteButton: !!deleteButton
+    });
     
     // Llenar valores
     if (titleInput) titleInput.value = task.title;
@@ -1250,10 +1266,24 @@ function openTaskDetailModal(taskId) {
     console.log('🪟 Mostrando modal...');
     const modal = document.getElementById('taskDetailModal');
     if (modal) {
+        // Forzar la visualización del modal
         modal.style.display = 'block';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.zIndex = '9999';
+        
+        // Verificar que se mantiene visible
+        setTimeout(() => {
+            console.log('🔍 Estado del modal después de 100ms:', {
+                display: modal.style.display,
+                visibility: modal.style.visibility,
+                opacity: modal.style.opacity
+            });
+        }, 100);
+        
         console.log('✅ Modal mostrado correctamente');
         if (canEdit && titleInput) {
-            titleInput.focus();
+            setTimeout(() => titleInput.focus(), 100);
         }
     } else {
         console.error('❌ No se encontró el modal taskDetailModal');
@@ -1303,13 +1333,12 @@ function loadEmployeesIntoEditSelect() {
     employees.forEach(employee => {
         const option = document.createElement('option');
         option.value = employee.id;
-        option.textContent = `${employee.name} (${employee.id})`;
+        option.textContent = employee.name;
         select.appendChild(option);
     });
 }
 
 function displayCommentsHistory(commentsString) {
-    const historyDiv = document.getElementById('commentsHistory');
     const contentDiv = document.getElementById('commentsHistoryContent');
     const countDiv = document.getElementById('commentsCount');
     
@@ -1319,15 +1348,14 @@ function displayCommentsHistory(commentsString) {
         // Mostrar estado vacío
         if (contentDiv) {
             contentDiv.innerHTML = `
-                <div style="text-align: center; color: #94a3b8; padding: 40px 20px; font-style: italic;">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">📝</div>
-                    <div>No hay comentarios aún</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Los comentarios aparecerán aquí cuando se agreguen</div>
+                <div class="empty-comments-state">
+                    <div class="empty-icon">💬</div>
+                    <div class="empty-title">No hay comentarios aún</div>
+                    <div class="empty-subtitle">Los comentarios aparecerán aquí cuando se agreguen</div>
                 </div>
             `;
         }
         if (countDiv) countDiv.textContent = 'Sin comentarios';
-        if (historyDiv) historyDiv.style.display = 'block'; // Siempre mostrar el área
         return;
     }
     
@@ -1336,15 +1364,14 @@ function displayCommentsHistory(commentsString) {
         // Mostrar estado vacío
         if (contentDiv) {
             contentDiv.innerHTML = `
-                <div style="text-align: center; color: #94a3b8; padding: 40px 20px; font-style: italic;">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">📝</div>
-                    <div>No hay comentarios aún</div>
-                    <div style="font-size: 0.8rem; margin-top: 4px;">Los comentarios aparecerán aquí cuando se agreguen</div>
+                <div class="empty-comments-state">
+                    <div class="empty-icon">💬</div>
+                    <div class="empty-title">No hay comentarios aún</div>
+                    <div class="empty-subtitle">Los comentarios aparecerán aquí cuando se agreguen</div>
                 </div>
             `;
         }
         if (countDiv) countDiv.textContent = 'Sin comentarios';
-        if (historyDiv) historyDiv.style.display = 'block';
         return;
     }
     
@@ -1397,88 +1424,19 @@ function displayCommentsHistory(commentsString) {
             const commentId = `comment_${Date.now()}_${Math.random().toString(36).substring(2)}`;
             
             historyHTML += `
-                <div class="comment-item" style="
-                    margin-bottom: 12px; 
-                    padding: 16px; 
-                    background: rgba(255, 255, 255, 0.9); 
-                    border-radius: 12px; 
-                    border-left: 4px solid #667eea;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    transition: all 0.2s ease;
-                    cursor: default;
-                    position: relative;
-                " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.1)';">
-                    
-                    <!-- Botones de acción en la esquina superior derecha -->
-                    <div style="
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
-                        display: flex;
-                        gap: 4px;
-                        opacity: 0.7;
-                        transition: opacity 0.2s ease;
-                    " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
-                                                ${forceFiles ? `
-                            <button class="view-files-btn" data-comment-id="${commentId}" style="
-                                background: #3b82f6;
-                                color: white;
-                                border: none;
-                                padding: 4px 8px;
-                                border-radius: 4px;
-                                font-size: 0.75rem;
-                                cursor: pointer;
-                                transition: all 0.2s ease;
-                                display: flex;
-                                align-items: center;
-                                gap: 2px;
-                            " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'" title="Ver archivos adjuntos">
-                                📎 Ver
-                            </button>
-                        ` : ''}
- 
-                        <button class="delete-comment-btn" data-comment-index="${index}" style="
-                            background: #ef4444;
-                            color: white;
-                            border: none;
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                            font-size: 0.75rem;
-                            cursor: pointer;
-                            transition: all 0.2s ease;
-                            display: flex;
-                            align-items: center;
-                            gap: 2px;
-                        " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" title="Borrar comentario">
-                            🗑️ Borrar
-                        </button>
+                <div class="comment-item" data-comment-id="${commentId}">
+                    <div class="comment-header">
+                        <div class="comment-meta">
+                            <span class="comment-author">${userName || 'Usuario'}</span>
+                            <span class="comment-time">${timestamp}</span>
+                            ${index === 0 ? '<span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.65rem; font-weight: 500;">RECIENTE</span>' : ''}
+                        </div>
+                        <div class="comment-actions-btn">
+                            ${forceFiles ? `<button class="comment-action view-files view-files-btn" data-comment-id="${commentId}" title="Ver archivos adjuntos">📎 Ver</button>` : ''}
+                            <button class="comment-action delete delete-comment-btn" data-comment-index="${index}" title="Borrar comentario">🗑️</button>
+                        </div>
                     </div>
-                    
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        gap: 8px; 
-                        font-size: 0.8rem; 
-                        color: #64748b; 
-                        margin-bottom: 8px; 
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        margin-right: 80px;
-                    ">
-                        <span>📅</span>
-                        <span>${timestamp}</span>
-                        ${userName ? `<span style="color: #6366f1; font-weight: 700;">👤 ${userName}</span>` : ''}
-                        ${index === 0 ? '<span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 500;">MÁS RECIENTE</span>' : ''}
-                    </div>
-                    <div id="${commentId}" style="
-                        color: #374151; 
-                        line-height: 1.6; 
-                        font-size: 0.95rem;
-                        word-wrap: break-word;
-                        white-space: pre-wrap;
-                        margin-right: 10px;
-                    ">${processCommentContent(comment)}</div>
+                    <div class="comment-content" id="${commentId}">${processCommentContent(comment)}</div>
                 </div>
             `;
         } else {
@@ -1555,7 +1513,6 @@ function displayCommentsHistory(commentsString) {
     });
     
     if (contentDiv) contentDiv.innerHTML = historyHTML;
-    if (historyDiv) historyDiv.style.display = 'block';
     
     // Agregar event listeners para los botones
     setTimeout(() => {
@@ -1612,14 +1569,13 @@ function processCommentContent(comment) {
         processedContent += escapeHtml(textPart);
     }
     
-    // Agregar archivos si existen - VERSIÓN SIMPLIFICADA
+    // Agregar archivos si existen - NUEVA VERSIÓN SIN PREVIEW
     if (fileMatches && fileMatches.length > 0) {
         if (processedContent) {
-            processedContent += '<br><br>';
+            processedContent += '<br>';
         }
         
-        processedContent += '<div style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 16px; border-radius: 12px; border: 1px solid #cbd5e1; margin-top: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">';
-        processedContent += '<div style="font-size: 0.9rem; color: #475569; margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.1rem;">📎</span>Archivos adjuntos</div>';
+        processedContent += '<div class="comment-attachments">';
         
         fileMatches.forEach(fileMatch => {
             console.log('📎 Procesando archivo:', fileMatch);
@@ -1633,106 +1589,45 @@ function processCommentContent(comment) {
                 
                 console.log('📎 Archivo encontrado:', { fileName, fileSize, fileId });
                 
-                // Mostrar información mejorada del archivo
+                // Obtener icono del archivo
+                const fileExtension = fileName.split('.').pop().toLowerCase();
+                let fileIcon = '📄';
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) fileIcon = '🖼️';
+                else if (fileExtension === 'pdf') fileIcon = '📄';
+                else if (['doc', 'docx'].includes(fileExtension)) fileIcon = '📝';
+                else if (['xls', 'xlsx'].includes(fileExtension)) fileIcon = '📊';
+                else if (['zip', 'rar'].includes(fileExtension)) fileIcon = '📦';
+                
+                // Mostrar archivo sin preview, solo botón Ver
                 processedContent += `
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        gap: 12px; 
-                        padding: 12px; 
-                        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); 
-                        border: 1px solid #e2e8f0; 
-                        border-radius: 8px; 
-                        margin-bottom: 8px;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                        transition: all 0.2s ease;
-                        cursor: pointer;
-                    " data-file-id="${fileId}" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'">
-                        <div style="
-                            width: 40px; 
-                            height: 40px; 
-                            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
-                            border-radius: 8px; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            color: white; 
-                            font-size: 1.2rem;
-                            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-                        ">
-                            📄
+                    <div class="attachment-item" data-file-id="${fileId}">
+                        <div class="attachment-icon">${fileIcon}</div>
+                        <div class="attachment-info">
+                            <div class="attachment-name">${escapeHtml(fileName)}</div>
+                            <div class="attachment-size">${escapeHtml(fileSize)}</div>
                         </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem; word-break: break-word; margin-bottom: 2px;">
-                                ${escapeHtml(fileName)}
-                            </div>
-                            <div style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 4px;">
-                                <span style="color: #10b981;">●</span>
-                                ${escapeHtml(fileSize)}
-                            </div>
-                        </div>
-                        <div style="
-                            padding: 6px 12px; 
-                            background: rgba(59, 130, 246, 0.1); 
-                            border: 1px solid rgba(59, 130, 246, 0.2); 
-                            border-radius: 6px; 
-                            font-size: 0.8rem; 
-                            color: #1e40af; 
-                            font-weight: 600;
-                        ">
-                            Adjunto
+                        <div class="attachment-actions">
+                            <button class="attachment-btn view" onclick="openFilePreview('${fileId}')" title="Ver archivo">
+                                👁️ Ver
+                            </button>
                         </div>
                         <span style="display: none;">FILE_ID:${fileId}</span>
                     </div>
                 `;
             } else {
                 console.log('⚠️ No se pudo parsear archivo:', fileMatch);
-                // Fallback: mostrar información básica mejorada
+                // Fallback: mostrar información básica
                 processedContent += `
-                    <div style="
-                        display: flex; 
-                        align-items: center; 
-                        gap: 12px; 
-                        padding: 12px; 
-                        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); 
-                        border: 1px solid #d1d5db; 
-                        border-radius: 8px; 
-                        margin-bottom: 8px;
-                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                        opacity: 0.8;
-                    ">
-                        <div style="
-                            width: 40px; 
-                            height: 40px; 
-                            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
-                            border-radius: 8px; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center; 
-                            color: white; 
-                            font-size: 1.2rem;
-                        ">
-                            📄
+                    <div class="attachment-item">
+                        <div class="attachment-icon">📄</div>
+                        <div class="attachment-info">
+                            <div class="attachment-name">Archivo adjunto</div>
+                            <div class="attachment-size">Información no disponible</div>
                         </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; color: #374151; font-size: 0.9rem; margin-bottom: 2px;">
-                                Archivo adjunto
-                            </div>
-                            <div style="font-size: 0.8rem; color: #6b7280; display: flex; align-items: center; gap: 4px;">
-                                <span style="color: #f59e0b;">●</span>
-                                Información no disponible
-                            </div>
-                        </div>
-                        <div style="
-                            padding: 6px 12px; 
-                            background: rgba(156, 163, 175, 0.1); 
-                            border: 1px solid rgba(156, 163, 175, 0.2); 
-                            border-radius: 6px; 
-                            font-size: 0.8rem; 
-                            color: #6b7280; 
-                            font-weight: 600;
-                        ">
-                            Error
+                        <div class="attachment-actions">
+                            <button class="attachment-btn view" disabled title="No disponible">
+                                ❌ Error
+                            </button>
                         </div>
                     </div>
                 `;
@@ -2016,17 +1911,7 @@ function handleFileSelection() {
         
         selectedFiles.forEach((file, index) => {
             const fileItem = document.createElement('div');
-            fileItem.style.cssText = `
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                background: rgba(99, 102, 241, 0.1);
-                border: 1px solid rgba(99, 102, 241, 0.2);
-                border-radius: 6px;
-                padding: 4px 8px;
-                font-size: 0.75rem;
-                max-width: 200px;
-            `;
+            fileItem.className = 'file-item';
             
             const fileIcon = getFileIcon(file.type);
             const fileName = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
@@ -2034,15 +1919,7 @@ function handleFileSelection() {
             fileItem.innerHTML = `
                 <span>${fileIcon}</span>
                 <span style="color: #4338ca; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileName}</span>
-                <button onclick="removeFile(${index})" style="
-                    background: none;
-                    border: none;
-                    color: #dc2626;
-                    cursor: pointer;
-                    font-size: 0.7rem;
-                    padding: 0;
-                    margin-left: auto;
-                ">✕</button>
+                <button class="remove-file" onclick="removeFile(${index})">✕</button>
             `;
             
             filesList.appendChild(fileItem);
@@ -2114,8 +1991,22 @@ window.openAddTaskModal = openAddTaskModal;
 window.closeAddTaskModal = closeAddTaskModal;
 window.logout = logout;
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', initApp); 
+// Función de prueba para el modal - TEMPORAL
+function testModal() {
+    const modal = document.getElementById('taskDetailModal');
+    if (modal) {
+        modal.style.display = 'block';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.zIndex = '9999';
+        console.log('Modal de prueba mostrado');
+    } else {
+        console.log('Modal no encontrado');
+    }
+}
+window.testModal = testModal;
+
+// Inicializar cuando el DOM esté listo - REMOVIDO: duplicado más abajo 
 
 // =============================
 // FUNCIONES DE UI: MODAL NUEVA TAREA
@@ -2231,7 +2122,7 @@ function openAddTaskModal() {
             employees.forEach(employee => {
                 const option = document.createElement('option');
                 option.value = employee.id;
-                option.textContent = `${employee.name} (${employee.id})`;
+                option.textContent = employee.name;
                 select.appendChild(option);
             });
             console.log('🟣 [DEBUG] Empleados cargados en el select:', employees.length);
@@ -2326,6 +2217,25 @@ window.sendComment = sendComment;
 window.reloadTasksFromDB = reloadTasksFromDB;
 window.exportTasks = exportTasks;
 window.clearAllTasks = clearAllTasks;
+window.goToDashboard = goToDashboard;
+
+// =============================
+// FUNCIONES DE DASHBOARD
+// =============================
+function configureDashboardButton() {
+    const dashboardBtn = document.getElementById('dashboardBtn');
+    if (dashboardBtn && isAdmin()) {
+        dashboardBtn.style.display = 'inline-flex';
+        console.log('✅ Botón Dashboard habilitado para administrador');
+    } else {
+        console.log('ℹ️ Botón Dashboard oculto - usuario no es administrador');
+    }
+}
+
+function goToDashboard() {
+    console.log('🚀 Redirigiendo al Dashboard...');
+    window.location.href = 'ponche.html';
+}
 
 // =============================
 // FUNCIÓN PARA LLENAR EL SELECT DE EMPLEADOS EN EL MODAL DE NUEVA TAREA
@@ -2340,7 +2250,7 @@ function loadEmployeesIntoSelect() {
     employees.forEach(employee => {
         const option = document.createElement('option');
         option.value = employee.id;
-        option.textContent = `${employee.name} (${employee.id})`;
+        option.textContent = employee.name;
         select.appendChild(option);
     });
 }
